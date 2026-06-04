@@ -53,3 +53,7 @@ public class TradeConfirmer {
         return failureCount;
     }
 }
+
+/*completableFuture allows confirmation and it does the processing without blcking the matching engine
+where calling future,get() would serialize the execution and it will just defeat the concurrency
+ */
