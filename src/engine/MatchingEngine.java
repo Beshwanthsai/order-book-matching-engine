@@ -8,11 +8,16 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
+import confirmation.TradeConfirmer;
+import java.util.concurrent.CompletableFuture;
 
 public class MatchingEngine implements Runnable {
     private final BlockingQueue<Order> orderQueue;
     private final List<Order> buyOrders;
     private final List<Order> sellOrders;
+    private final TradeConfirmer tradeConfirmer;
+    private final List<CompletableFuture<Boolean>> confirmationFutures;
+    private int matchedTrades = 0;
 
 //     tryLock() allows the engine to back off instead of waiting forever. synchronized cannot timeout.
 
@@ -23,9 +28,14 @@ public class MatchingEngine implements Runnable {
 
     private volatile boolean marketOpen = true;
 
-    public MatchingEngine(BlockingQueue<Order> orderQueue) {
-
+    public MatchingEngine(
+            BlockingQueue<Order> orderQueue,
+            TradeConfirmer tradeConfirmer,
+            List<CompletableFuture<Boolean>> confirmationFutures
+    ) {
         this.orderQueue = orderQueue;
+        this.tradeConfirmer = tradeConfirmer;
+        this.confirmationFutures = confirmationFutures;
 
         this.buyOrders = new ArrayList<>();
         this.sellOrders = new ArrayList<>();
@@ -77,13 +87,14 @@ public class MatchingEngine implements Runnable {
         for (Order buy : buyOrders) {
             for (Order sell : sellOrders) {
                 if (buy.getPrice() >= sell.getPrice()) {
-                    Trade trade =
-                            new Trade(buy, sell, sell.getPrice());
-                    System.out.println("MATCH FOUND -> " + trade);
-
-                    buyOrders.remove(buy);
-                    sellOrders.remove(sell);
-                    return;
+                    Trade trade = new Trade(buy, sell, sell.getPrice());
+                        matchedTrades++;
+                        CompletableFuture<Boolean> future = tradeConfirmer.confirmTrade(trade);
+                        confirmationFutures.add(future);
+                        System.out.println("MATCH FOUND -> " + trade);
+                        buyOrders.remove(buy);
+                        sellOrders.remove(sell);
+                        return;
                 }
             }
         }
@@ -95,5 +106,8 @@ public class MatchingEngine implements Runnable {
 
     public List<Order> getSellOrders() {
         return sellOrders;
+    }
+    public int getMatchedTrades() {
+        return matchedTrades;
     }
 }
