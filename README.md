@@ -1,4 +1,3 @@
-# order-book-matching-engine
 # Order Book Matching Engine
 
 A Java-based concurrent Order Book Matching Engine that simulates a simplified stock exchange. Multiple trader threads submit BUY and SELL orders concurrently, while a single matching engine thread processes orders and executes trades. Trade confirmations are handled asynchronously using `CompletableFuture`.
@@ -164,8 +163,6 @@ The project includes standalone demonstrations of:
 
 **Beshwanth Sai Katari**
 
-B.Tech Computer Science and Engineering
-KL University
 
 GitHub: https://github.com/Beshwanthsai
 
